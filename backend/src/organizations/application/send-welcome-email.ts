@@ -64,7 +64,7 @@ export function renderWelcomeEmail(
             </tr>
             <tr>
               <td style="font-size:14px;color:#374151;line-height:1.5;padding-bottom:8px;">
-                Sua senha provisória de acesso é:
+                O acesso é feito com o CPF informado no cadastro e a senha provisória abaixo:
               </td>
             </tr>
             <tr>
@@ -89,7 +89,9 @@ export function renderWelcomeEmail(
     '',
     `Acesse o sistema em: ${accessUrl}`,
     '',
-    `Sua senha provisória de acesso é: ${provisionalPassword}`,
+    'O acesso é feito com o CPF informado no cadastro e a senha provisória abaixo:',
+    '',
+    `Senha provisória: ${provisionalPassword}`,
     '',
     'Por segurança, altere essa senha no primeiro acesso.',
   ].join('\n')

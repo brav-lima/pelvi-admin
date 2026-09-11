@@ -21,11 +21,11 @@ describe('renderWelcomeEmail', () => {
     }
   })
 
-  it('does not mention the owner CPF anywhere in the email', () => {
+  it('tells the recipient login is by CPF without stating their actual CPF value', () => {
     const result = renderWelcomeEmail(base)
 
-    expect(result.html).not.toContain('CPF')
-    expect(result.text).not.toContain('CPF')
+    expect(result.html).toContain('CPF informado no cadastro')
+    expect(result.text).toContain('CPF informado no cadastro')
   })
 
   it('escapes HTML special characters in owner name and organization name', () => {
