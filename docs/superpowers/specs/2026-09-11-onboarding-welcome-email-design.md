@@ -246,14 +246,16 @@ updated.
 
 ## 10. Development workflow (per CLAUDE.md)
 
-Before implementation:
+Tracked as [SOU-48](https://linear.app/blvckship/issue/SOU-48/enviar-e-mail-de-boas-vindas-ao-criar-organizacao)
+in Linear (team SouPelvi, project Admin) — task tracking moved from GitHub
+Projects to Linear on 2026-09-11.
 
-1. Create / locate a tracked item on the project board
-   (`https://github.com/orgs/brav-lima/projects/1`), move to **In progress**.
-2. Branch `feat/<issue>-onboarding-welcome-email` off `main`.
-3. PR targets `main`, body `Closes #<n>`, passes `tsc --noEmit` in both
+1. Issue moved to **In Progress** in Linear.
+2. Branch `bravilal/sou-48-enviar-e-mail-de-boas-vindas-ao-criar-organizacao`
+   off `main` (Linear's generated branch name).
+3. PR targets `main`, body references `SOU-48`, passes `tsc --noEmit` in both
    packages.
-4. After merge, move board item to **Done**.
+4. After merge, move the Linear issue to **Done**.
 
 ---
 
