@@ -5,7 +5,6 @@ import { MailService } from '../../mail/mail.service'
 export interface SendWelcomeEmailInput {
   ownerName: string
   ownerEmail: string
-  ownerCpf: string
   organizationName: string
   provisionalPassword: string
 }
@@ -34,11 +33,10 @@ interface RenderWelcomeEmailInput extends SendWelcomeEmailInput {
 export function renderWelcomeEmail(
   input: RenderWelcomeEmailInput,
 ): { subject: string; html: string; text: string } {
-  const { ownerName, ownerCpf, organizationName, provisionalPassword, accessUrl } = input
-  const subject = 'Bem-vindo(a) à Pelvi — seu acesso está liberado'
+  const { ownerName, organizationName, provisionalPassword, accessUrl } = input
+  const subject = 'Bem-vindo(a) à SouPelvi — seu acesso está liberado'
 
   const safeOwnerName = escapeHtml(ownerName)
-  const safeOwnerCpf = escapeHtml(ownerCpf)
   const safeOrgName = escapeHtml(organizationName)
   const safePassword = escapeHtml(provisionalPassword)
   const safeAccessUrl = escapeHtml(accessUrl)
@@ -52,7 +50,7 @@ export function renderWelcomeEmail(
         <td align="center">
           <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;padding:32px;">
             <tr>
-              <td style="font-size:20px;font-weight:bold;color:#111827;padding-bottom:16px;">Bem-vindo(a) à Pelvi!</td>
+              <td style="font-size:20px;font-weight:bold;color:#111827;padding-bottom:16px;">Bem-vindo(a) à SouPelvi!</td>
             </tr>
             <tr>
               <td style="font-size:14px;color:#374151;line-height:1.5;padding-bottom:16px;">
@@ -62,11 +60,6 @@ export function renderWelcomeEmail(
             <tr>
               <td style="padding-bottom:16px;">
                 <a href="${safeAccessUrl}" style="display:inline-block;background-color:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:14px;">Acessar o sistema</a>
-              </td>
-            </tr>
-            <tr>
-              <td style="font-size:14px;color:#374151;line-height:1.5;padding-bottom:8px;">
-                Seu login é o CPF: <strong>${safeOwnerCpf}</strong>
               </td>
             </tr>
             <tr>
@@ -90,13 +83,11 @@ export function renderWelcomeEmail(
 </html>`.trim()
 
   const text = [
-    'Bem-vindo(a) à Pelvi!',
+    'Bem-vindo(a) à SouPelvi!',
     '',
     `Olá, ${ownerName}. A organização ${organizationName} foi criada com sucesso e seu acesso já está liberado.`,
     '',
     `Acesse o sistema em: ${accessUrl}`,
-    '',
-    `Seu login é o CPF: ${ownerCpf}`,
     '',
     `Sua senha provisória de acesso é: ${provisionalPassword}`,
     '',

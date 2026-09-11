@@ -226,7 +226,6 @@ describe('CreateOrganizationWithOwnerUseCase', () => {
       expect.objectContaining({
         ownerName: 'Ana Lima',
         ownerEmail: 'ana@test.com',
-        ownerCpf: '12345678900',
         organizationName: 'Clínica A',
       }),
     )

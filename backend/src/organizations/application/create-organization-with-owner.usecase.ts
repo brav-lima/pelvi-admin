@@ -171,7 +171,6 @@ export class CreateOrganizationWithOwnerUseCase {
         await this.sendWelcomeEmail.execute({
           ownerName: personResp.person.name,
           ownerEmail: personResp.person.email,
-          ownerCpf: personResp.person.cpf,
           organizationName: organization.name,
           provisionalPassword,
         })
