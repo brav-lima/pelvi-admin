@@ -104,6 +104,9 @@ Copy `backend/.env.example` to `backend/.env.dev` and populate:
 | `CLINIC_API_URL` | Base URL of the pelvi-ui clinic API (e.g. `http://localhost:3000`). Admin appends `/api/internal/*` — do **not** include the path prefix. |
 | `CLINIC_INTERNAL_API_KEY` | Shared secret for admin→clinic calls (`x-internal-api-key` header). Must match `INTERNAL_API_KEY` on the clinic side. Rotation policy: every 90 days or immediately on suspected compromise. |
 | `CLINIC_EXTERNAL_API_KEY` | Shared secret for clinic→admin calls accepted on `x-clinic-api-key` header. Must match `ADMIN_EXTERNAL_API_KEY` in pelvi-ui. Same rotation policy. |
+| `RESEND_API_KEY` | Resend API credential for transactional emails (onboarding welcome email). Required in every environment — startup fails if absent. |
+| `MAIL_FROM` | Sender identity for onboarding emails, e.g. `Pelvi <bemvindo@soupelvi.com.br>`. Domain must be verified in Resend (SPF/DKIM). Required in every environment — startup fails if absent. |
+| `CLINIC_APP_URL` | Base URL of the pelvi-ui frontend (e.g. `https://app.soupelvi.com.br`), used to build the login link in the welcome email. Distinct from `CLINIC_API_URL` (the API). Required in every environment — startup fails if absent. |
 | `SEED_ADMIN_EMAIL` | Email do super admin criado no seed (default: `admin@soupelvi.com.br`) |
 | `SEED_ADMIN_PASSWORD` | **Obrigatória.** Senha do super admin criado no seed. Sem essa var o seed falha. Deve estar definida tanto em `.env.dev` (local) quanto nas envs do Coolify (production). Se o admin já existir no banco, o seed pula a criação e mantém a senha atual. |
 

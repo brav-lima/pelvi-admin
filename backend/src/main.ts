@@ -8,6 +8,7 @@ import * as cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import { AppModule } from './app.module'
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
+import { assertMailConfig } from './mail/assert-mail-config'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true })
@@ -20,6 +21,8 @@ async function bootstrap() {
   if (process.env.NODE_ENV === 'production' && (!corsOrigin || corsOrigin.includes('localhost'))) {
     throw new Error('CORS_ORIGIN must be set to a production domain in production environment')
   }
+
+  assertMailConfig(config)
 
   app.use(
     helmet({
