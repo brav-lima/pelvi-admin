@@ -187,6 +187,7 @@ enum OrgEventType {
   USER_ADDED
   USER_REMOVED
   PASSWORD_RESET
+  WELCOME_EMAIL_SENT
 }
 
 model OrgEvent {
