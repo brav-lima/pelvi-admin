@@ -27,13 +27,28 @@ export class MailService {
   }
 
   async send(input: SendMailInput): Promise<void> {
-    const { error } = await this.resend.emails.send({
-      from: this.config.getOrThrow<string>('MAIL_FROM'),
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
+    const TIMEOUT_MS = 5000
+
+    let timeoutHandle: NodeJS.Timeout
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(() => reject(new Error('Timeout ao enviar e-mail via Resend')), TIMEOUT_MS)
     })
+
+    let error: { message: string } | null
+    try {
+      ;({ error } = await Promise.race([
+        this.resend.emails.send({
+          from: this.config.getOrThrow<string>('MAIL_FROM'),
+          to: input.to,
+          subject: input.subject,
+          html: input.html,
+          text: input.text,
+        }),
+        timeout,
+      ]))
+    } finally {
+      clearTimeout(timeoutHandle!)
+    }
 
     if (error) {
       this.logger.error(`Falha ao enviar e-mail via Resend: ${error.message}`)

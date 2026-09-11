@@ -5,6 +5,7 @@ import { MailService } from '../../mail/mail.service'
 export interface SendWelcomeEmailInput {
   ownerName: string
   ownerEmail: string
+  ownerCpf: string
   organizationName: string
   provisionalPassword: string
 }
@@ -17,7 +18,7 @@ export class SendWelcomeEmail {
   ) {}
 
   async execute(input: SendWelcomeEmailInput): Promise<void> {
-    const accessUrl = `${this.config.getOrThrow<string>('CLINIC_APP_URL')}/login`
+    const accessUrl = new URL('/login', this.config.getOrThrow<string>('CLINIC_APP_URL')).toString()
     const { subject, html, text } = renderWelcomeEmail({ ...input, accessUrl })
     await this.mail.send({ to: input.ownerEmail, subject, html, text })
   }
@@ -33,12 +34,14 @@ interface RenderWelcomeEmailInput extends SendWelcomeEmailInput {
 export function renderWelcomeEmail(
   input: RenderWelcomeEmailInput,
 ): { subject: string; html: string; text: string } {
-  const { ownerName, organizationName, provisionalPassword, accessUrl } = input
+  const { ownerName, ownerCpf, organizationName, provisionalPassword, accessUrl } = input
   const subject = 'Bem-vindo(a) à Pelvi — seu acesso está liberado'
 
   const safeOwnerName = escapeHtml(ownerName)
+  const safeOwnerCpf = escapeHtml(ownerCpf)
   const safeOrgName = escapeHtml(organizationName)
   const safePassword = escapeHtml(provisionalPassword)
+  const safeAccessUrl = escapeHtml(accessUrl)
 
   const html = `
 <!doctype html>
@@ -58,7 +61,12 @@ export function renderWelcomeEmail(
             </tr>
             <tr>
               <td style="padding-bottom:16px;">
-                <a href="${accessUrl}" style="display:inline-block;background-color:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:14px;">Acessar o sistema</a>
+                <a href="${safeAccessUrl}" style="display:inline-block;background-color:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:14px;">Acessar o sistema</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-size:14px;color:#374151;line-height:1.5;padding-bottom:8px;">
+                Seu login é o CPF: <strong>${safeOwnerCpf}</strong>
               </td>
             </tr>
             <tr>
@@ -67,9 +75,7 @@ export function renderWelcomeEmail(
               </td>
             </tr>
             <tr>
-              <td style="font-size:16px;font-family:monospace;background-color:#f4f5f7;padding:12px;border-radius:6px;color:#111827;">
-                ${safePassword}
-              </td>
+              <td style="font-size:16px;font-family:monospace;background-color:#f4f5f7;padding:12px;border-radius:6px;color:#111827;"><code>${safePassword}</code></td>
             </tr>
             <tr>
               <td style="font-size:12px;color:#6b7280;line-height:1.5;padding-top:16px;">
@@ -89,6 +95,8 @@ export function renderWelcomeEmail(
     `Olá, ${ownerName}. A organização ${organizationName} foi criada com sucesso e seu acesso já está liberado.`,
     '',
     `Acesse o sistema em: ${accessUrl}`,
+    '',
+    `Seu login é o CPF: ${ownerCpf}`,
     '',
     `Sua senha provisória de acesso é: ${provisionalPassword}`,
     '',

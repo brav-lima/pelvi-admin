@@ -171,6 +171,7 @@ export class CreateOrganizationWithOwnerUseCase {
         await this.sendWelcomeEmail.execute({
           ownerName: personResp.person.name,
           ownerEmail: personResp.person.email,
+          ownerCpf: personResp.person.cpf,
           organizationName: organization.name,
           provisionalPassword,
         })
@@ -178,7 +179,7 @@ export class CreateOrganizationWithOwnerUseCase {
           ownerEmail: personResp.person.email,
         })
       } catch (err) {
-        this.logger.error(`Falha ao enviar e-mail de boas-vindas (org=${organization.id})`, err as Error)
+        this.logger.error(`Falha ao enviar e-mail de boas-vindas (org=${organization.id}): ${(err as Error).message}`)
       }
     }
 

@@ -45,4 +45,20 @@ describe('MailService', () => {
       service.send({ to: 'owner@test.com', subject: 'Oi', html: '<p>Oi</p>', text: 'Oi' }),
     ).rejects.toThrow('Invalid `from` field')
   })
+
+  it('rejects with a timeout error when the Resend call hangs', async () => {
+    jest.useFakeTimers()
+    try {
+      mockSend.mockReturnValue(new Promise(() => {})) // never resolves
+      const service = new MailService(makeConfig())
+
+      const pending = service.send({ to: 'owner@test.com', subject: 'Oi', html: '<p>Oi</p>', text: 'Oi' })
+      const assertion = expect(pending).rejects.toThrow('Timeout ao enviar e-mail via Resend')
+
+      await jest.advanceTimersByTimeAsync(5000)
+      await assertion
+    } finally {
+      jest.useRealTimers()
+    }
+  })
 })
