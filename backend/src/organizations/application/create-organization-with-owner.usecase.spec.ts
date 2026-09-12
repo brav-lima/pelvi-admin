@@ -9,6 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service'
 import { ResolveTrialPlan } from './resolve-trial-plan'
 import { OrgEventService } from './org-event.service'
 import { Organization } from '../domain/organization.entity'
+import { SendWelcomeEmail } from './send-welcome-email'
 
 const makeOrg = (overrides: Partial<Organization> = {}): Organization => ({
   id: 'org-1',
@@ -74,6 +75,7 @@ describe('CreateOrganizationWithOwnerUseCase', () => {
   let prisma: jest.Mocked<Pick<PrismaService, '$transaction' | 'plan'>>
   let resolveTrialPlan: jest.Mocked<ResolveTrialPlan>
   let orgEvents: jest.Mocked<OrgEventService>
+  let sendWelcomeEmail: jest.Mocked<SendWelcomeEmail>
   let sut: CreateOrganizationWithOwnerUseCase
   let tx: ReturnType<typeof makeTx>
 
@@ -102,6 +104,7 @@ describe('CreateOrganizationWithOwnerUseCase', () => {
     }
     resolveTrialPlan = { planId: jest.fn().mockResolvedValue('plan-trial-id') } as any
     orgEvents = { record: jest.fn().mockResolvedValue(undefined), list: jest.fn() } as any
+    sendWelcomeEmail = { execute: jest.fn().mockResolvedValue(undefined) } as any
 
     sut = new CreateOrganizationWithOwnerUseCase(
       repo as any,
@@ -109,6 +112,7 @@ describe('CreateOrganizationWithOwnerUseCase', () => {
       prisma as any,
       resolveTrialPlan,
       orgEvents,
+      sendWelcomeEmail,
     )
   })
 
@@ -209,5 +213,55 @@ describe('CreateOrganizationWithOwnerUseCase', () => {
 
     await expect(sut.execute(baseInput)).rejects.toThrow('DB connection lost')
     expect(clinicApi.updateClinicAccess).toHaveBeenCalledWith('clinic-fail', 'BLOCKED')
+  })
+
+  it('sends the welcome email when a new person is created', async () => {
+    repo.findAll.mockResolvedValue({ data: [], total: 0 })
+    clinicApi.createClinic.mockResolvedValue({ clinicId: 'clinic-new' } as any)
+    clinicApi.upsertPerson.mockResolvedValue(personResp(false) as any)
+
+    await sut.execute(baseInput)
+
+    expect(sendWelcomeEmail.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerName: 'Ana Lima',
+        ownerEmail: 'ana@test.com',
+        organizationName: 'Clínica A',
+      }),
+    )
+    expect(orgEvents.record).toHaveBeenCalledWith(
+      'org-1',
+      'WELCOME_EMAIL_SENT',
+      expect.objectContaining({ ownerEmail: 'ana@test.com' }),
+    )
+  })
+
+  it('does not send the welcome email when the owner is reused', async () => {
+    repo.findAll.mockResolvedValue({ data: [], total: 0 })
+    clinicApi.createClinic.mockResolvedValue({ clinicId: 'clinic-new' } as any)
+    clinicApi.upsertPerson.mockResolvedValue(personResp(true) as any)
+
+    await sut.execute(baseInput)
+
+    expect(sendWelcomeEmail.execute).not.toHaveBeenCalled()
+    expect(orgEvents.record).not.toHaveBeenCalledWith(
+      expect.anything(),
+      'WELCOME_EMAIL_SENT',
+      expect.anything(),
+    )
+  })
+
+  it('does not propagate a welcome-email failure and does not record the event', async () => {
+    repo.findAll.mockResolvedValue({ data: [], total: 0 })
+    clinicApi.createClinic.mockResolvedValue({ clinicId: 'clinic-new' } as any)
+    clinicApi.upsertPerson.mockResolvedValue(personResp(false) as any)
+    sendWelcomeEmail.execute.mockRejectedValue(new Error('Resend is down'))
+
+    await expect(sut.execute(baseInput)).resolves.toBeDefined()
+    expect(orgEvents.record).not.toHaveBeenCalledWith(
+      expect.anything(),
+      'WELCOME_EMAIL_SENT',
+      expect.anything(),
+    )
   })
 })

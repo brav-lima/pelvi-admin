@@ -8,47 +8,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 All development MUST follow this process — no exceptions:
 
-### 1. Source of truth: GitHub Projects
-- Every task comes from the project board at `https://github.com/orgs/brav-lima/projects/1`
-- Before starting any implementation, check the board for items in **Ready** status
-- Respect the priority order: `critical` → `high` → `medium` → `low`
-- Never implement something not tracked in the board
+### 1. Source of truth: Linear
+- Every task comes from Linear, team **SouPelvi** (key `SOU`), project **Admin**
+  (`https://linear.app/blvckship/project/admin-af7923f2aee3`)
+- Before starting any implementation, check the project for items in **Todo** status
+- Respect priority order: `Urgent` → `High` → `Medium` → `Low`
+- Never implement something not tracked as a Linear issue in this project
 
 ### 2. Branch per issue
 - Create a dedicated branch for each issue before writing any code
-- Branch naming convention: `<type>/<issue-number>-<short-slug>`
-  - Examples: `fix/1-rate-limiting`, `feat/9-refresh-token`, `chore/14-db-indexes`
+- Use the branch name Linear generates for the issue (`gitBranchName` field),
+  format `<linear-username>/sou-<issue-number>-<slug>`
+  - Example: `bravilal/sou-48-enviar-e-mail-de-boas-vindas-ao-criar-organizacao`
 - Always branch off `main` (only production environment exists currently):
   ```bash
-  git checkout main && git pull && git checkout -b fix/1-rate-limiting
+  git checkout main && git pull && git checkout -b bravilal/sou-48-<slug>
   ```
+- Move the issue to **In Progress** when starting work on it
 
 ### 3. Pull Request linked to the issue
-- Open a PR targeting `main` with the issue number in the body using `Closes #<n>`
-- PR title should match the issue title (without the emoji prefix)
+- Open a PR targeting `main` referencing the Linear issue identifier (e.g.
+  `SOU-48`) in the body — the Linear GitHub integration auto-links and can
+  auto-close the issue on merge, same intent as `Closes #<n>` on GitHub Issues
+- PR title should match the issue title
 - PR must pass TypeScript check (`tsc --noEmit`) before being considered ready
 - Use `gh pr create --base main` and include the issue reference:
   ```bash
-  gh pr create --base main --title "..." --body "Closes #<n>"
+  gh pr create --base main --title "..." --body "Refs SOU-48"
   ```
 
-### 4. Update the board after merge
-- After the PR is merged, move the corresponding project item to **Done**
-- The `Closes #<n>` keyword in the PR body auto-closes the issue on merge; update the board status manually if needed:
-  ```bash
-  gh project item-edit --id <PVTI_...> --project-id PVT_kwDODyXYas4BUbPy \
-    --field-id PVTSSF_lADODyXYas4BUbPyzhBjbI4 --single-select-option-id 98236657
-  ```
+### 4. Update Linear after merge
+- After the PR is merged, move the corresponding Linear issue to **Done**
+  (confirm the GitHub integration did this automatically; update manually if
+  not)
 
-### Project field reference
-| Field | ID |
-|-------|----|
-| Project ID | `PVT_kwDODyXYas4BUbPy` |
-| Status field | `PVTSSF_lADODyXYas4BUbPyzhBjbI4` |
-| Status → Done | `98236657` |
-| Status → In progress | `47fc9ee4` |
-| Status → Ready | `61e4505c` |
-| Status → Backlog | `f75ad846` |
+### Linear issue statuses (team SouPelvi)
+`Backlog` → `Todo` → `In Progress` → `In Review` → `Done` (also `Canceled`, `Duplicate`)
+
+GitHub Issues on this repo are no longer the source of truth for task
+tracking as of 2026-09-11 — pre-existing open GitHub issues predate the
+Linear migration and should be triaged into Linear before being worked on.
 
 ---
 
@@ -105,6 +104,9 @@ Copy `backend/.env.example` to `backend/.env.dev` and populate:
 | `CLINIC_API_URL` | Base URL of the pelvi-ui clinic API (e.g. `http://localhost:3000`). Admin appends `/api/internal/*` — do **not** include the path prefix. |
 | `CLINIC_INTERNAL_API_KEY` | Shared secret for admin→clinic calls (`x-internal-api-key` header). Must match `INTERNAL_API_KEY` on the clinic side. Rotation policy: every 90 days or immediately on suspected compromise. |
 | `CLINIC_EXTERNAL_API_KEY` | Shared secret for clinic→admin calls accepted on `x-clinic-api-key` header. Must match `ADMIN_EXTERNAL_API_KEY` in pelvi-ui. Same rotation policy. |
+| `RESEND_API_KEY` | Resend API credential for transactional emails (onboarding welcome email). Required in every environment — startup fails if absent. |
+| `MAIL_FROM` | Sender identity for onboarding emails, e.g. `SouPelvi <bemvindo@soupelvi.com.br>`. Domain must be verified in Resend (SPF/DKIM). Required in every environment — startup fails if absent. |
+| `CLINIC_APP_URL` | Base URL of the pelvi-ui frontend (e.g. `https://app.soupelvi.com.br`), used to build the login link in the welcome email. Distinct from `CLINIC_API_URL` (the API). Required in every environment — startup fails if absent. |
 | `SEED_ADMIN_EMAIL` | Email do super admin criado no seed (default: `admin@soupelvi.com.br`) |
 | `SEED_ADMIN_PASSWORD` | **Obrigatória.** Senha do super admin criado no seed. Sem essa var o seed falha. Deve estar definida tanto em `.env.dev` (local) quanto nas envs do Coolify (production). Se o admin já existir no banco, o seed pula a criação e mantém a senha atual. |
 

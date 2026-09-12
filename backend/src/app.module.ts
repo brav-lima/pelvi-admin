@@ -13,6 +13,7 @@ import { ClinicApiModule } from './clinic-api/clinic-api.module'
 import { HealthModule } from './health/health.module'
 import { ClinicExtModule } from './clinic-ext/clinic-ext.module'
 import { PlanFeaturesModule } from './plan-features/plan-features.module'
+import { MailModule } from './mail/mail.module'
 import { CorrelationIdMiddleware } from './common/correlation/correlation-id.middleware'
 
 @Module({
@@ -44,6 +45,7 @@ import { CorrelationIdMiddleware } from './common/correlation/correlation-id.mid
     }),
     PrismaModule,
     ClinicApiModule,
+    MailModule,
     AuthModule,
     OrganizationsModule,
     PlansModule,

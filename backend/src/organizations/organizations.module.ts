@@ -9,6 +9,7 @@ import { ChangePlanAdminUseCase } from './application/change-plan-admin.usecase'
 import { ResolveClinicId } from './application/resolve-clinic-id'
 import { ResolveTrialPlan } from './application/resolve-trial-plan'
 import { OrgEventService } from './application/org-event.service'
+import { SendWelcomeEmail } from './application/send-welcome-email'
 import { PrismaOrganizationRepository } from './infra/prisma-organization.repository'
 import { ORGANIZATION_REPOSITORY } from './domain/organization.repository'
 
@@ -24,6 +25,7 @@ import { ORGANIZATION_REPOSITORY } from './domain/organization.repository'
     ResolveClinicId,
     ResolveTrialPlan,
     OrgEventService,
+    SendWelcomeEmail,
     {
       provide: ORGANIZATION_REPOSITORY,
       useClass: PrismaOrganizationRepository,

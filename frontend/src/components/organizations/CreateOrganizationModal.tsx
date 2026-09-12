@@ -179,7 +179,9 @@ export function CreateOrganizationModal() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Envie essa senha ao responsável por um canal seguro. Ele deverá alterá-la no primeiro acesso.
+                Um e-mail de boas-vindas com o link de acesso foi enviado para{' '}
+                <strong>{ownerCreated.ownerEmail}</strong>. Esta senha é o backup manual — envie por
+                um canal seguro caso o e-mail não chegue.
               </p>
             </div>
 

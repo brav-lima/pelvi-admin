@@ -6,6 +6,7 @@ import { PrismaService } from '../../prisma/prisma.service'
 import { ResolveTrialPlan } from './resolve-trial-plan'
 import { generateProvisionalPassword } from './provisional-password'
 import { OrgEventService } from './org-event.service'
+import { SendWelcomeEmail } from './send-welcome-email'
 
 export interface CreateOrganizationWithOwnerInput {
   organizationType: 'CLINIC_PJ' | 'SOLO_PF'
@@ -52,6 +53,7 @@ export class CreateOrganizationWithOwnerUseCase {
     private readonly prisma: PrismaService,
     private readonly resolveTrialPlan: ResolveTrialPlan,
     private readonly orgEvents: OrgEventService,
+    private readonly sendWelcomeEmail: SendWelcomeEmail,
   ) {}
 
   async execute(input: CreateOrganizationWithOwnerInput): Promise<CreateOrganizationWithOwnerResult> {
@@ -164,6 +166,20 @@ export class CreateOrganizationWithOwnerUseCase {
 
     if (personResp.reused) {
       this.logger.log(`Owner reaproveitado (cpf=***${input.owner.cpf.slice(-3)}); senha provisória não foi redefinida.`)
+    } else {
+      try {
+        await this.sendWelcomeEmail.execute({
+          ownerName: personResp.person.name,
+          ownerEmail: personResp.person.email,
+          organizationName: organization.name,
+          provisionalPassword,
+        })
+        await this.orgEvents.record(organization.id, 'WELCOME_EMAIL_SENT', {
+          ownerEmail: personResp.person.email,
+        })
+      } catch (err) {
+        this.logger.error(`Falha ao enviar e-mail de boas-vindas (org=${organization.id}): ${(err as Error).message}`)
+      }
     }
 
     return {
