@@ -263,7 +263,46 @@ Cascade rules:
 - Deleting an `Organization` → cascades to its `Subscription`s → cascades to their `Invoice`s.
 - Deleting a `Plan` is blocked if any `Subscription` references it (`Restrict`).
 
-After any schema change: `bun run prisma:generate` then `bun run prisma:migrate:dev`.
+**Migration workflow (mandatory) — after any schema change:**
+
+1. `bun run prisma:generate` — regenerate the Prisma client.
+2. `bun run prisma:migrate:dev --name <description>` — generate and apply
+   the migration, **when a reachable dev database is configured**
+   (`DATABASE_ADMIN_URL` set in `backend/.env.dev`).
+3. **If no dev database is reachable** (common in sandboxed/agent
+   environments — `prisma migrate dev` and `prisma migrate diff
+   --from-migrations` both require a live or shadow database connection
+   and fail without one): hand-author
+   `backend/prisma/migrations/<timestamp>_<description>/migration.sql`
+   yourself. `<timestamp>` is `YYYYMMDDHHMMSS`, later than every existing
+   migration folder under `backend/prisma/migrations/`.
+   - Match this repo's exact generated SQL conventions — compare against a
+     recent real migration (e.g. `20260514120000_add_org_events`) for
+     style: `CREATE TYPE ... AS ENUM (...)` for enums; `CREATE TABLE` with
+     `snake_case` columns in schema-declaration order; `CONSTRAINT
+     "<table>_pkey" PRIMARY KEY (...)`; `CREATE INDEX
+     "<table>_<column>_idx"` / `UNIQUE INDEX "<table>_<column>_key"`; and
+     `ALTER TABLE ... ADD CONSTRAINT "<table>_<column>_fkey" FOREIGN KEY
+     (...) REFERENCES ... ON DELETE <action> ON UPDATE CASCADE` — Prisma's
+     default `onDelete` is `RESTRICT` for required relations and `SET
+     NULL` for optional ones, unless the schema sets `onDelete: Cascade`
+     (or another action) explicitly.
+   - Run `bunx prisma validate` to confirm the schema itself is still
+     consistent — this validates the schema file only, **not** the
+     hand-written SQL.
+   - Never skip committing this file just because it wasn't
+     machine-generated: `prisma migrate deploy` (which
+     `docker-entrypoint.sh` runs automatically on every deploy) only
+     *applies* migrations that already exist in the repo — it does not
+     generate them. Without this file, the deploy will not create the new
+     table/column and the feature breaks in production.
+   - Call this out explicitly in the PR description — that the migration
+     was hand-authored and should be applied against a real database (or
+     reviewed carefully) before merge, since it wasn't validated by
+     Prisma's own diff engine.
+4. Never edit an already-merged migration file. If a hand-authored
+   migration turns out to be wrong after review, add a new corrective
+   migration — don't rewrite history.
 
 **Paginated list endpoints** (`GET /invoices`, `GET /subscriptions`) accept `page` (default 1) and `limit` (default 50, max 100) query params and return `{ data, total, page, limit }`.
 

@@ -6,7 +6,7 @@ export class MetricsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSummary() {
-    const [activeOrgs, trialOrgs, suspendedOrgs, overdueInvoices, mrrResult] =
+    const [activeOrgs, trialOrgs, suspendedOrgs, overdueInvoices, mrrResult, openSupportTicketsCount] =
       await Promise.all([
         this.prisma.organization.count({ where: { status: 'ACTIVE' } }),
         this.prisma.subscription.count({ where: { status: 'TRIAL' } }),
@@ -18,11 +18,12 @@ export class MetricsService {
           JOIN plans p ON p.id = s.plan_id
           WHERE s.status = 'ACTIVE'
         `,
+        this.prisma.supportTicket.count({ where: { status: 'OPEN' } }),
       ])
 
     const mrr = Number(mrrResult[0]?.mrr ?? 0)
 
-    return { mrr, activeOrgs, trialOrgs, suspendedOrgs, overdueInvoices }
+    return { mrr, activeOrgs, trialOrgs, suspendedOrgs, overdueInvoices, openSupportTicketsCount }
   }
 
   async getRevenueByYear(year: number) {
