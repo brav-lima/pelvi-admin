@@ -26,7 +26,8 @@ model AdminUser {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  refreshTokens AdminRefreshToken[]
+  refreshTokens       AdminRefreshToken[]
+  emailRepliedTickets SupportTicket[]
 
   @@map("admin_users")
 }
@@ -68,19 +69,20 @@ enum DocumentType {
 }
 
 model Organization {
-  id           String       @id @default(uuid())
-  name         String
-  document     String       @unique // CNPJ (14 dígitos) ou CPF (11 dígitos) dependendo de documentType
-  documentType DocumentType @default(CNPJ) @map("document_type")
-  email        String
-  phone        String?
-  status       OrgStatus    @default(ACTIVE)
-  clinicExternalId String?  @map("clinic_external_id") // ID da Clinic no pelvi-ui (sem FK cross-db)
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  id               String       @id @default(uuid())
+  name             String
+  document         String       @unique // CNPJ (14 dígitos) ou CPF (11 dígitos) dependendo de documentType
+  documentType     DocumentType @default(CNPJ) @map("document_type")
+  email            String
+  phone            String?
+  status           OrgStatus    @default(ACTIVE)
+  clinicExternalId String?      @map("clinic_external_id") // ID da Clinic no pelvi-ui (sem FK cross-db)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
-  subscriptions Subscription[]
-  events        OrgEvent[]
+  subscriptions  Subscription[]
+  events         OrgEvent[]
+  supportTickets SupportTicket[]
 
   @@index([status])
   @@index([clinicExternalId])
@@ -111,16 +113,16 @@ model PlanFeatureDefinition {
 // ──────────────────────────────────────────────
 
 model Plan {
-  id           String   @id @default(uuid())
-  name         String   @unique
-  priceMonthly Decimal  @db.Decimal(10, 2) @map("price_monthly")
-  maxUsers     Int      @map("max_users")
-  maxPatients  Int      @map("max_patients")
+  id              String   @id @default(uuid())
+  name            String   @unique
+  priceMonthly    Decimal  @map("price_monthly") @db.Decimal(10, 2)
+  maxUsers        Int      @map("max_users")
+  maxPatients     Int      @map("max_patients")
   features        Json? // ex: { nfse: true, whatsapp: false }
   isActive        Boolean  @default(true) @map("is_active")
   visibleToClinic Boolean  @default(true) @map("visible_to_clinic")
   createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   subscriptions Subscription[]
 
@@ -223,4 +225,52 @@ model Invoice {
   @@index([dueDate])
   @@index([externalReference])
   @@map("invoices")
+}
+
+// ──────────────────────────────────────────────
+// SupportTicket — chamados de suporte reportados pela clínica (MVP)
+// ──────────────────────────────────────────────
+
+enum SupportTicketCategory {
+  BUG
+  SUGGESTION
+  QUESTION
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+model SupportTicket {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+
+  category SupportTicketCategory
+  status   SupportTicketStatus   @default(OPEN)
+
+  reporterName  String  @map("reporter_name")
+  reporterEmail String? @map("reporter_email")
+  reporterRole  String? @map("reporter_role")
+
+  description   String
+  context       Json
+  sentryEventId String? @map("sentry_event_id")
+
+  internalNote String? @map("internal_note")
+
+  emailReplyBody        String?   @map("email_reply_body")
+  emailRepliedAt        DateTime? @map("email_replied_at")
+  emailRepliedByAdminId String?   @map("email_replied_by_admin_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  emailRepliedByAdmin AdminUser?   @relation(fields: [emailRepliedByAdminId], references: [id])
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("support_tickets")
 }
