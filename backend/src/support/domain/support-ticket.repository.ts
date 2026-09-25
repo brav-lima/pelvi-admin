@@ -26,7 +26,9 @@ export interface ListSupportTicketsFilter {
 export interface ISupportTicketRepository {
   create(data: CreateSupportTicketData): Promise<SupportTicket>
   findById(id: string): Promise<SupportTicket | null>
-  findAll(filter: ListSupportTicketsFilter): Promise<{ data: SupportTicket[]; total: number }>
+  findAll(
+    filter: ListSupportTicketsFilter,
+  ): Promise<{ data: SupportTicket[]; total: number; page: number; limit: number }>
   updateStatus(id: string, status: SupportTicketStatus): Promise<SupportTicket>
   updateInternalNote(id: string, note: string): Promise<SupportTicket>
   saveReply(id: string, body: string, adminId: string): Promise<SupportTicket>

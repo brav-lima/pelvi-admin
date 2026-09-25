@@ -37,7 +37,9 @@ export class PrismaSupportTicketRepository implements ISupportTicketRepository {
     return row ? this.toDomain(row) : null
   }
 
-  async findAll(filter: ListSupportTicketsFilter): Promise<{ data: SupportTicket[]; total: number }> {
+  async findAll(
+    filter: ListSupportTicketsFilter,
+  ): Promise<{ data: SupportTicket[]; total: number; page: number; limit: number }> {
     const { status, category, page = 1, limit = 50 } = filter
     const take = Math.min(limit, 100)
     const skip = (page - 1) * take
@@ -52,7 +54,7 @@ export class PrismaSupportTicketRepository implements ISupportTicketRepository {
       this.prisma.supportTicket.count({ where }),
     ])
 
-    return { data: rows.map((row) => this.toDomain(row)), total }
+    return { data: rows.map((row) => this.toDomain(row)), total, page, limit: take }
   }
 
   async updateStatus(id: string, status: SupportTicketStatus): Promise<SupportTicket> {

@@ -6,7 +6,7 @@ export interface SupportTicketContext {
   url: string
   userAgent: string
   appVersion: string
-  sessionId: string
+  sessionId?: string | null
   occurredAt: string
 }
 
