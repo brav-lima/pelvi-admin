@@ -83,7 +83,13 @@ inbox/thread.
   worst case a user submits a garbage `userAgent` string).
 - Call pelvi-admin's external endpoint:
 
-  `POST <ADMIN_API_URL>/api/clinic-ext/v1/support-tickets`
+  `POST <ADMIN_API_URL>/api/admin/v1/clinic-ext/support-tickets`
+
+  (verify this exact path against pelvi-admin's `main.ts`/`clinic-ext`
+  controllers at implementation time — pelvi-admin applies a global
+  `api/admin` prefix on top of each controller's own route, so the real
+  path is not simply `/api/clinic-ext/*` despite what some pelvi-admin docs
+  say)
   header `x-clinic-api-key: <ADMIN_EXTERNAL_API_KEY>` (this env var/shared
   secret is the same one already used for other `clinic-ext` calls from
   this backend — reuse it, don't introduce a new one).
