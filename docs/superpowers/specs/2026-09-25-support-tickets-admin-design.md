@@ -110,15 +110,24 @@ New `backend/src/support/` module, following the same layered pattern as
   `update-support-ticket-note.usecase.ts`, `reply-support-ticket.usecase.ts`
 - `infra/` — `prisma-support-ticket.repository.ts`
 - `support-ticket-external.controller.ts` — external-facing, guarded by
-  the existing `ClinicExternalApiKeyGuard`
+  the existing `ClinicExternalApiKeyGuard`, mounted at `@Controller('v1/clinic-ext')`
+  (same prefix segment as `ClinicExtController`, so it resolves under the
+  same route family)
 - `support-ticket-admin.controller.ts` — backoffice-facing, guarded by
   `JwtAuthGuard` + `RolesGuard(SUPPORT, SUPER_ADMIN)`
 
 ## API
 
+**Note on paths:** `main.ts` sets a global prefix `api/admin` on every
+controller (`app.setGlobalPrefix('api/admin')`). This means the existing
+`clinic-ext` routes actually resolve at `/api/admin/v1/clinic-ext/*`, not
+`/api/clinic-ext/*` as the (simplified) `CLAUDE.md` description says — a
+pre-existing doc/code mismatch, out of scope to fix here. All paths below
+are the real, resolved paths.
+
 ### External (called by the pelvi-ui backend, `x-clinic-api-key` header)
 
-`POST /api/clinic-ext/v1/support-tickets`
+`POST /api/admin/v1/clinic-ext/support-tickets`
 
 ```json
 {
@@ -169,7 +178,18 @@ never trusted from the browser. Same convention already documented for
 ### Metrics
 
 `GET /metrics/summary` response gains `openSupportTicketsCount` (count of
-tickets with `status: OPEN`), used for the sidebar badge.
+tickets with `status: OPEN`).
+
+**Important for the sidebar badge (SOU-64):** `/metrics/summary` is guarded
+by `@Roles('SUPER_ADMIN', 'FINANCE')` — it does **not** include `SUPPORT`,
+and widening it would also expose MRR/revenue to that role, which is not
+desired. Since `SUPPORT` is exactly the role that works tickets, **the
+sidebar badge must not read `openSupportTicketsCount` from
+`/metrics/summary`** for that role. Instead, source the badge count from
+`GET /support-tickets?status=OPEN&limit=1`'s `total` field, which is already
+accessible to both `SUPER_ADMIN` and `SUPPORT`. The `metrics/summary` field
+remains useful for `SUPER_ADMIN`/`FINANCE`-facing dashboards, just not as
+the sidebar-badge data source.
 
 ## Backoffice UI
 
@@ -185,9 +205,11 @@ tickets with `status: OPEN`), used for the sidebar badge.
   email reply section (textarea + "Responder por e-mail", disabled with a
   tooltip when `reporterEmail` is null; shows `emailReplyBody`/
   `emailRepliedAt` once sent), and status action buttons.
-- `AdminSidebar`: new "Suporte" nav item under "Operação", badge =
-  `openSupportTicketsCount`, same visual pattern as the Invoices overdue
-  badge.
+- `AdminSidebar`: new "Suporte" nav item under "Operação", badge = the open
+  ticket count, same visual pattern as the Invoices overdue badge. Per the
+  Metrics section above, source this from `GET
+  /support-tickets?status=OPEN&limit=1`'s `total`, not from
+  `/metrics/summary`, so it works for the `SUPPORT` role too.
 - New React Query hooks in the existing `lib/api.ts` client pattern; new
   type additions to `src/types/admin.ts` (`SupportTicket`,
   `SupportTicketCategory`, `SupportTicketStatus`).
