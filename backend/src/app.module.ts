@@ -12,6 +12,7 @@ import { MetricsModule } from './metrics/metrics.module'
 import { ClinicApiModule } from './clinic-api/clinic-api.module'
 import { HealthModule } from './health/health.module'
 import { ClinicExtModule } from './clinic-ext/clinic-ext.module'
+import { SupportModule } from './support/support.module'
 import { PlanFeaturesModule } from './plan-features/plan-features.module'
 import { MailModule } from './mail/mail.module'
 import { CorrelationIdMiddleware } from './common/correlation/correlation-id.middleware'
@@ -55,6 +56,7 @@ import { CorrelationIdMiddleware } from './common/correlation/correlation-id.mid
     MetricsModule,
     HealthModule,
     ClinicExtModule,
+    SupportModule,
   ],
 })
 export class AppModule implements NestModule {
