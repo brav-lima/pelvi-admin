@@ -8,11 +8,15 @@ import {
 } from '../domain/support-ticket.repository'
 import { SupportTicket, SupportTicketContext, SupportTicketStatus } from '../domain/support-ticket.entity'
 
+const withOrganization = { organization: { select: { id: true, name: true } } } as const
+
 @Injectable()
 export class PrismaSupportTicketRepository implements ISupportTicketRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private toDomain(row: PrismaSupportTicketRow): SupportTicket {
+  private toDomain(
+    row: PrismaSupportTicketRow & { organization?: { id: string; name: string } },
+  ): SupportTicket {
     return { ...row, context: row.context as unknown as SupportTicketContext }
   }
 
@@ -33,7 +37,7 @@ export class PrismaSupportTicketRepository implements ISupportTicketRepository {
   }
 
   async findById(id: string): Promise<SupportTicket | null> {
-    const row = await this.prisma.supportTicket.findUnique({ where: { id } })
+    const row = await this.prisma.supportTicket.findUnique({ where: { id }, include: withOrganization })
     return row ? this.toDomain(row) : null
   }
 
@@ -50,7 +54,13 @@ export class PrismaSupportTicketRepository implements ISupportTicketRepository {
     }
 
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.supportTicket.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
+      this.prisma.supportTicket.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: withOrganization,
+      }),
       this.prisma.supportTicket.count({ where }),
     ])
 

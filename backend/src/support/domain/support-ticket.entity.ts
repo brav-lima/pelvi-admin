@@ -27,4 +27,5 @@ export interface SupportTicket {
   emailRepliedByAdminId: string | null
   createdAt: Date
   updatedAt: Date
+  organization?: { id: string; name: string }
 }
