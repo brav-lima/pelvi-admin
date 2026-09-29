@@ -10,6 +10,7 @@ import {
 import { formatDate, getErrorMessage } from '@/lib/utils'
 import { useToast } from '@/contexts/ToastContext'
 import type { SupportTicket, SupportTicketStatus } from '@/types/admin'
+import { roleLabel, type ClinicUserRole } from '@/lib/clinic-roles'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Btn, Card, CardHeader, PageHeader } from '@/components/ui/ds'
 import { TicketCategoryTag, TicketStatusPill } from '@/components/support/TicketBadges'
@@ -27,7 +28,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div>
       <div style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 500 }}>{label}</div>
-      <div style={{ fontSize: 13, color: 'var(--text)', marginTop: 2, wordBreak: 'break-word' }}>{children}</div>
+      <div style={{ fontSize: 13, color: 'var(--text)', marginTop: 2, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{children}</div>
     </div>
   )
 }
@@ -38,18 +39,28 @@ export function SupportDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: ticket, isLoading, error } = useSupportTicket(id)
 
-  if (error) {
-    return (
-      <div style={{ borderRadius: 8, background: 'var(--danger-soft)', padding: '12px 16px', fontSize: 13, color: 'var(--danger-ink)' }}>
-        {getErrorMessage(error)}
-      </div>
-    )
+  if (error && !ticket) {
+    return <ErrorBanner error={error} />
   }
   if (isLoading || !ticket) {
     return <Skeleton className="h-64 w-full" />
   }
-  // `key` re-seeds the local form state if a refetch brings a different note.
-  return <TicketDetail key={ticket.id} ticket={ticket} />
+  // `key` resets the local form state when navigating between tickets; refetches
+  // of the same ticket deliberately do not clobber in-progress edits.
+  return (
+    <>
+      {error && <ErrorBanner error={error} />}
+      <TicketDetail key={ticket.id} ticket={ticket} />
+    </>
+  )
+}
+
+function ErrorBanner({ error }: { error: unknown }) {
+  return (
+    <div style={{ borderRadius: 8, background: 'var(--danger-soft)', padding: '12px 16px', fontSize: 13, color: 'var(--danger-ink)', marginBottom: 12 }}>
+      {getErrorMessage(error)}
+    </div>
+  )
 }
 
 function TicketDetail({ ticket }: { ticket: SupportTicket }) {
@@ -95,7 +106,7 @@ function TicketDetail({ ticket }: { ticket: SupportTicket }) {
         <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
           <Field label="Nome">{ticket.reporterName}</Field>
           <Field label="E-mail">{dash(ticket.reporterEmail)}</Field>
-          <Field label="Papel">{dash(ticket.reporterRole)}</Field>
+          <Field label="Papel">{ticket.reporterRole ? (roleLabel[ticket.reporterRole as ClinicUserRole] ?? ticket.reporterRole) : '—'}</Field>
           <Field label="Organização">
             {ticket.organization ? (
               <Link to={`/organizations/${ticket.organization.id}`}>{ticket.organization.name}</Link>
@@ -106,7 +117,7 @@ function TicketDetail({ ticket }: { ticket: SupportTicket }) {
 
       <Card>
         <CardHeader title="Descrição" />
-        <div style={{ padding: 16, fontSize: 13.5, whiteSpace: 'pre-wrap', color: 'var(--text)' }}>{ticket.description}</div>
+        <div style={{ padding: 16, fontSize: 13.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: 'var(--text)' }}>{ticket.description}</div>
       </Card>
 
       <Card>
@@ -180,7 +191,7 @@ function TicketDetail({ ticket }: { ticket: SupportTicket }) {
               <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginBottom: 4 }}>
                 Última resposta enviada em {formatDate(ticket.emailRepliedAt)}
               </div>
-              <div style={{ whiteSpace: 'pre-wrap' }}>{ticket.emailReplyBody}</div>
+              <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{ticket.emailReplyBody}</div>
             </div>
           )}
           <span title={canReply ? undefined : NO_EMAIL_TOOLTIP} style={{ display: 'contents' }}>

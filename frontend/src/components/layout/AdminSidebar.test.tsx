@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -57,6 +57,7 @@ describe('AdminSidebar — Suporte item', () => {
     asRole('FINANCE')
     renderSidebar()
 
+    await waitFor(() => expect(get).toHaveBeenCalledWith('/metrics/summary'))
     expect(screen.queryByRole('link', { name: /Suporte/ })).not.toBeInTheDocument()
     expect(get).not.toHaveBeenCalledWith('/support-tickets', expect.anything())
   })
@@ -71,6 +72,8 @@ describe('AdminSidebar — Suporte item', () => {
     renderSidebar()
 
     const link = await screen.findByRole('link', { name: /Suporte/ })
+    await waitFor(() => expect(get).toHaveBeenCalledWith('/support-tickets', expect.anything()))
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)) })
     expect(link).not.toHaveTextContent(/\d/)
   })
 })

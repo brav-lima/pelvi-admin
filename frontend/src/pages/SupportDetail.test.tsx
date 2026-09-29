@@ -175,4 +175,32 @@ describe('SupportDetailPage', () => {
     renderPage()
     expect(await screen.findByText('Já corrigimos o problema')).toBeInTheDocument()
   })
+
+  it('keeps the loaded ticket and unsent reply text when a background refetch fails', async () => {
+    mocked.get.mockResolvedValueOnce({ data: ticket() })
+    mocked.patch.mockResolvedValue({ data: ticket({ status: 'IN_PROGRESS' }) })
+    renderPage()
+    await screen.findByText('Não consegui salvar a evolução')
+
+    fireEvent.change(screen.getByLabelText('Resposta por e-mail'), { target: { value: 'rascunho não enviado' } })
+
+    mocked.get.mockRejectedValue({ response: { status: 500, data: { message: 'Falha temporária' } } })
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar como Em análise' }))
+    await waitFor(() => expect(mocked.get).toHaveBeenCalledTimes(2))
+    await screen.findByText('Falha temporária')
+
+    expect(screen.getByLabelText('Resposta por e-mail')).toHaveValue('rascunho não enviado')
+  })
+
+  it('shows the reporter role in Portuguese and falls back to the raw value for unknown roles', async () => {
+    mocked.get.mockResolvedValue({ data: ticket({ reporterRole: 'PROFESSIONAL' }) })
+    const { unmount } = renderPage()
+    expect(await screen.findByText('Profissional')).toBeInTheDocument()
+    expect(screen.queryByText('PROFESSIONAL')).not.toBeInTheDocument()
+    unmount()
+
+    mocked.get.mockResolvedValue({ data: ticket({ reporterRole: 'SOMETHING_NEW' }) })
+    renderPage()
+    expect(await screen.findByText('SOMETHING_NEW')).toBeInTheDocument()
+  })
 })

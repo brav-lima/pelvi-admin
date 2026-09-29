@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, KeyRound, Lock, Unlock } from 'lucide-react'
 import { api } from '@/lib/api'
+import { roleLabel, type ClinicUserRole } from '@/lib/clinic-roles'
 import { formatCPF, getErrorMessage } from '@/lib/utils'
 import { useToast } from '@/contexts/ToastContext'
 import { Button } from '@/components/ui/button'
@@ -9,8 +10,6 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
-
-type ClinicUserRole = 'ADMIN' | 'PROFESSIONAL' | 'RECEPTIONIST'
 
 interface ClinicUser {
   organizationUserId: string
@@ -29,12 +28,6 @@ interface ResetPasswordInfo {
   userName: string
   cpf: string
   provisionalPassword: string
-}
-
-const roleLabel: Record<ClinicUserRole, string> = {
-  ADMIN: 'Admin',
-  PROFESSIONAL: 'Profissional',
-  RECEPTIONIST: 'Recepção',
 }
 
 export function ClinicUsersSection({ organizationId }: { organizationId: string }) {
