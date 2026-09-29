@@ -66,24 +66,29 @@ export function useOpenSupportTicketsCount(enabled: boolean) {
   })
 }
 
-function useTicketMutation<TVars>(request: (vars: TVars) => Promise<{ data: SupportTicket }>) {
+export function useUpdateTicketStatus(id: string) {
   const queryClient = useQueryClient()
-  return useMutation<SupportTicket, unknown, TVars>({
-    mutationFn: (vars) => request(vars).then((r) => r.data),
+  return useMutation<SupportTicket, unknown, SupportTicketStatus>({
+    mutationFn: (status: SupportTicketStatus) =>
+      api.patch(`/support-tickets/${id}/status`, { status }).then((r) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: supportKeys.all }),
   })
 }
 
-export function useUpdateTicketStatus(id: string) {
-  return useTicketMutation((status: SupportTicketStatus) =>
-    api.patch(`/support-tickets/${id}/status`, { status }),
-  )
-}
-
 export function useUpdateTicketNote(id: string) {
-  return useTicketMutation((note: string) => api.patch(`/support-tickets/${id}/internal-note`, { note }))
+  const queryClient = useQueryClient()
+  return useMutation<SupportTicket, unknown, string>({
+    mutationFn: (note: string) =>
+      api.patch(`/support-tickets/${id}/internal-note`, { note }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: supportKeys.all }),
+  })
 }
 
 export function useReplyToTicket(id: string) {
-  return useTicketMutation((body: string) => api.post(`/support-tickets/${id}/reply`, { body }))
+  const queryClient = useQueryClient()
+  return useMutation<SupportTicket, unknown, string>({
+    mutationFn: (body: string) =>
+      api.post(`/support-tickets/${id}/reply`, { body }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: supportKeys.all }),
+  })
 }

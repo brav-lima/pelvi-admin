@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
+import type { SupportTicket, SupportTicketStatus } from '@/types/admin'
+import type { UseMutationResult } from '@tanstack/react-query'
 
 vi.mock('@/lib/api', () => ({
   api: { get: vi.fn(), patch: vi.fn(), post: vi.fn() },
@@ -47,13 +49,13 @@ describe('useSupportTickets', () => {
     const client = newClient()
 
     const { result, rerender } = renderHook(
-      ({ status }: { status?: 'OPEN' }) => useSupportTickets({ status, page: 2, limit: 20 }),
-      { wrapper: wrapperWith(client), initialProps: { status: undefined } },
+      ({ status }: { status?: SupportTicketStatus }) => useSupportTickets({ status, page: 2, limit: 20 }),
+      { wrapper: wrapperWith(client), initialProps: { status: undefined as SupportTicketStatus | undefined } },
     )
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(mockedApi.get).toHaveBeenCalledWith('/support-tickets', { params: { page: 2, limit: 20 } })
 
-    rerender({ status: 'OPEN' })
+    rerender({ status: 'OPEN' as SupportTicketStatus })
     await waitFor(() =>
       expect(mockedApi.get).toHaveBeenCalledWith('/support-tickets', {
         params: { page: 2, limit: 20, status: 'OPEN' },
@@ -89,9 +91,9 @@ describe('useUpdateTicketStatus', () => {
     const client = newClient()
     const invalidate = vi.spyOn(client, 'invalidateQueries')
 
-    const { result } = renderHook(() => useUpdateTicketStatus('t1'), { wrapper: wrapperWith(client) })
+    const { result } = renderHook(() => useUpdateTicketStatus('t1') as UseMutationResult<SupportTicket, unknown, SupportTicketStatus>, { wrapper: wrapperWith(client) })
     await act(async () => {
-      await result.current.mutateAsync('RESOLVED')
+      await result.current.mutateAsync('RESOLVED' as SupportTicketStatus)
     })
 
     expect(mockedApi.patch).toHaveBeenCalledWith('/support-tickets/t1/status', { status: 'RESOLVED' })
