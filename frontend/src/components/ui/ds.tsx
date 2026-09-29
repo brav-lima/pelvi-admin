@@ -242,7 +242,7 @@ export function SearchInput({ value, onChange, placeholder }: { value: string; o
 }
 
 // Status filter chips
-export function FilterChip({ label, count, active, onClick }: { label: string; count: number; active?: boolean; onClick?: () => void }) {
+export function FilterChip({ label, count, active, onClick }: { label: string; count?: number; active?: boolean; onClick?: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -259,39 +259,66 @@ export function FilterChip({ label, count, active, onClick }: { label: string; c
       }}
     >
       {label}
-      <span
-        style={{
-          fontSize: 11, padding: '1px 7px', borderRadius: 999,
-          background: active ? 'white' : 'var(--surface-3)',
-          color: active ? 'var(--p-ink)' : 'var(--text-muted)',
-          fontWeight: 500,
-        }}
-        className="num"
-      >
-        {count}
-      </span>
+      {count !== undefined && (
+        <span
+          style={{
+            fontSize: 11, padding: '1px 7px', borderRadius: 999,
+            background: active ? 'white' : 'var(--surface-3)',
+            color: active ? 'var(--p-ink)' : 'var(--text-muted)',
+            fontWeight: 500,
+          }}
+          className="num"
+        >
+          {count}
+        </span>
+      )}
     </button>
   )
 }
 
 // Table footer / pagination
-export function TableFooter({ showing, total }: { showing: number; total: number }) {
+export function TableFooter({
+  showing, total, page = 1, limit, onPageChange,
+}: {
+  showing: number
+  total: number
+  page?: number
+  limit?: number
+  onPageChange?: (page: number) => void
+}) {
+  const paged = !!onPageChange && !!limit
+  const offset = paged ? (page - 1) * limit! : 0
+  const from = showing === 0 ? 0 : offset + 1
+  const to = offset + showing
+  const canPrev = paged && page > 1
+  const canNext = paged && page * limit! < total
+  const navBtn = (enabled: boolean): React.CSSProperties => ({
+    height: 28, padding: '0 10px', borderRadius: 6, border: '1px solid var(--ds-border)',
+    background: 'var(--surface)', fontSize: 12.5, fontFamily: 'var(--font-sans)',
+    cursor: enabled ? 'pointer' : 'not-allowed', opacity: enabled ? 1 : 0.5,
+  })
+
   return (
     <div
       className="flex items-center justify-between"
       style={{ padding: '10px 16px', borderTop: '1px solid var(--ds-border)', background: 'var(--surface-2)', fontSize: 12, color: 'var(--text-muted)' }}
     >
       <div>
-        Mostrando <span className="num" style={{ color: 'var(--text-2)' }}>1–{showing}</span>{' '}
+        Mostrando <span className="num" style={{ color: 'var(--text-2)' }}>{from}–{to}</span>{' '}
         de <span className="num" style={{ color: 'var(--text-2)' }}>{total}</span>
       </div>
       <div className="flex items-center gap-1.5">
-        <button disabled style={{ opacity: 0.5, height: 28, padding: '0 10px', borderRadius: 6, border: '1px solid var(--ds-border)', background: 'var(--surface)', fontSize: 12.5, fontFamily: 'var(--font-sans)', cursor: 'not-allowed' }}>
-          ‹ Anterior
-        </button>
-        <button style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '1px solid var(--ds-border)', background: 'var(--surface)', fontSize: 12.5, fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
-          Próxima ›
-        </button>
+        {paged ? (
+          <>
+            <button disabled={!canPrev} onClick={() => onPageChange!(page - 1)} style={navBtn(canPrev)}>‹ Anterior</button>
+            <button disabled={!canNext} onClick={() => onPageChange!(page + 1)} style={navBtn(canNext)}>Próxima ›</button>
+          </>
+        ) : (
+          <>
+            <button disabled style={{ ...navBtn(false) }}>‹ Anterior</button>
+            <button style={{ ...navBtn(true) }}>Próxima ›</button>
+          </>
+        )}
       </div>
     </div>
   )
