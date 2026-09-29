@@ -2,7 +2,8 @@ import { NavLink } from 'react-router-dom'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import type { MetricsSummary } from '@/types/admin'
+import { useOpenSupportTicketsCount } from '@/lib/support'
+import type { AdminRole, MetricsSummary } from '@/types/admin'
 
 const DashboardIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
@@ -30,6 +31,12 @@ const RefreshIcon = () => (
 const FileIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
     <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>
+  </svg>
+)
+const LifebuoyIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+    <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/>
+    <path d="m5.6 5.6 3.9 3.9M14.5 14.5l3.9 3.9M18.4 5.6l-3.9 3.9M9.5 14.5l-3.9 3.9"/>
   </svg>
 )
 const CogIcon = () => (
@@ -84,12 +91,23 @@ const FeaturesIcon = () => (
   </svg>
 )
 
-const navItems = [
+const SUPPORT_ROLES: AdminRole[] = ['SUPER_ADMIN', 'SUPPORT']
+
+type NavItem = {
+  to: string
+  icon: () => React.JSX.Element
+  label: string
+  badge?: 'overdue' | 'support'
+  roles?: AdminRole[]
+}
+
+const navItems: NavItem[] = [
   { to: '/dashboard',     icon: DashboardIcon, label: 'Visão geral' },
   { to: '/organizations', icon: BuildingIcon,  label: 'Organizações' },
   { to: '/plans',         icon: CardIcon,      label: 'Planos' },
   { to: '/subscriptions', icon: RefreshIcon,   label: 'Assinaturas' },
-  { to: '/invoices',      icon: FileIcon,      label: 'Faturas', badge: true },
+  { to: '/invoices',      icon: FileIcon,      label: 'Faturas', badge: 'overdue' },
+  { to: '/support',       icon: LifebuoyIcon,  label: 'Suporte', badge: 'support', roles: SUPPORT_ROLES },
 ]
 
 const planSubItems = [
@@ -106,6 +124,10 @@ export function AdminSidebar() {
   })
 
   const overdueCount = metrics?.overdueInvoices ?? 0
+  const canSeeSupport = !!user && SUPPORT_ROLES.includes(user.role)
+  const { data: openTickets = 0 } = useOpenSupportTicketsCount(canSeeSupport)
+  const badgeCount = { overdue: overdueCount, support: openTickets }
+  const visibleNavItems = navItems.filter((item) => !item.roles || (!!user && item.roles.includes(user.role)))
 
   return (
     <aside
@@ -151,7 +173,7 @@ export function AdminSidebar() {
 
       {/* Nav */}
       <nav className="flex-1" style={{ padding: '4px 10px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {navItems.map(({ to, icon: Icon, label, badge }) => (
+        {visibleNavItems.map(({ to, icon: Icon, label, badge }) => (
           <div key={to}>
             <NavLink
               to={to}
@@ -181,7 +203,7 @@ export function AdminSidebar() {
             >
               <Icon />
               <span className="flex-1">{label}</span>
-              {badge && overdueCount > 0 && (
+              {badge && badgeCount[badge] > 0 && (
                 <span
                   className="num"
                   style={{
@@ -191,7 +213,7 @@ export function AdminSidebar() {
                     fontWeight: 600,
                   }}
                 >
-                  {overdueCount}
+                  {badgeCount[badge]}
                 </span>
               )}
             </NavLink>
